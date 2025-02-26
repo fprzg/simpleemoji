@@ -250,7 +250,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gray-100 py-6 flex flex-col justify-center sm:py-12">
       <Head>
-        <title>Emoji Copier</title>
+        <title>Simple Emoji</title>
         <meta name="description" content="Copy emojis with a click" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
@@ -260,7 +260,7 @@ export default function Home() {
         <div className="relative px-4 py-10 bg-white shadow-lg sm:rounded-3xl sm:p-20">
           <div className="max-w-md mx-auto md:max-w-xl lg:max-w-3xl">
             <div>
-              <h1 className="text-3xl font-extrabold text-gray-900 text-center mb-8">Emoji Copier</h1>
+              <h1 className="text-3xl font-extrabold text-gray-900 text-center mb-8">Simple Emoji</h1>
 
               {/* Copy message */}
               {copyMessage && (
@@ -291,6 +291,10 @@ export default function Home() {
                     </button>
                   )}
                 </div>
+              </div>
+
+              <div className="mt-6 text-center text-sm text-gray-500">
+                <p>Hold Shift to select multiple emojis • Search by emoji name</p>
               </div>
 
               {/* Selected emojis display */}
@@ -325,9 +329,6 @@ export default function Home() {
                 </div>
               ))}
 
-              <div className="mt-6 text-center text-sm text-gray-500">
-                <p>Hold Shift to select multiple emojis • Search by emoji name</p>
-              </div>
             </div>
           </div>
         </div>
