@@ -3,7 +3,7 @@
 // pages/index.tsx
 import { useState, useEffect, KeyboardEvent as ReactKeyboardEvent, useMemo } from 'react';
 import Head from 'next/head';
-import { Emoji, EmojiCategory, EmojiCategories } from "@/app/emojis";
+import { Emoji, EmojiCategories } from "@/app/emojis";
 
 export default function Home() {
   const [recentEmojis, setRecentEmojis] = useState<Emoji[]>([]);
