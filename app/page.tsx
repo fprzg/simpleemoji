@@ -306,10 +306,18 @@ export default function Home() {
               )}
 
               {/* Search results */}
-              {searchResults.length > 0 && (
+              {searchQuery !== "" && (
                 <div className="mb-6">
-                  <h2 className="text-lg font-medium text-gray-900 mb-2">Search Results</h2>
-                  {renderEmojiGrid(searchResults)}
+                  {searchResults.length > 0 ? (
+                    <>
+                      < h2 className="text-lg font-medium text-gray-900 mb-2">Search Results</h2>
+                      {renderEmojiGrid(searchResults)}
+                    </>
+                  ) : (
+                    <>
+                      <div className="text-lg text-gray-700">No match</div>
+                    </>
+                  )}
                 </div>
               )}
 
@@ -333,6 +341,6 @@ export default function Home() {
           </div>
         </div>
       </div>
-    </div>
+    </div >
   );
 }
