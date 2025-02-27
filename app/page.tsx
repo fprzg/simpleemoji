@@ -3,17 +3,7 @@
 // pages/index.tsx
 import { useState, useEffect, KeyboardEvent as ReactKeyboardEvent, useMemo } from 'react';
 import Head from 'next/head';
-
-// Define TypeScript interfaces
-interface Emoji {
-  char: string;
-  name: string;
-}
-
-interface EmojiCategory {
-  name: string;
-  emojis: Emoji[];
-}
+import { Emoji, EmojiCategory, EmojiCategories } from "@/app/emojis";
 
 export default function Home() {
   const [recentEmojis, setRecentEmojis] = useState<Emoji[]>([]);
@@ -23,116 +13,9 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [searchResults, setSearchResults] = useState<Emoji[]>([]);
 
-  // Emoji categories with emojis and their names
-  const emojiCategories: EmojiCategory[] = [
-    {
-      name: 'Smileys & Emotion',
-      emojis: [
-        { char: '😀', name: 'grinning face' },
-        { char: '😃', name: 'grinning face with big eyes' },
-        { char: '😄', name: 'grinning face with smiling eyes' },
-        { char: '😁', name: 'beaming face with smiling eyes' },
-        { char: '😆', name: 'grinning squinting face' },
-        { char: '😅', name: 'grinning face with sweat' },
-        { char: '😂', name: 'face with tears of joy' },
-        { char: '🤣', name: 'rolling on the floor laughing' },
-        { char: '😊', name: 'smiling face with smiling eyes' },
-        { char: '😇', name: 'smiling face with halo' },
-        { char: '🙂', name: 'slightly smiling face' },
-        { char: '🙃', name: 'upside-down face' },
-        { char: '😉', name: 'winking face' },
-        { char: '😌', name: 'relieved face' },
-        { char: '😍', name: 'smiling face with heart-eyes' },
-        { char: '🥰', name: 'smiling face with hearts' },
-        { char: '😘', name: 'face blowing a kiss' },
-        { char: '😗', name: 'kissing face' }
-      ]
-    },
-    {
-      name: 'People & Body',
-      emojis: [
-        { char: '👍', name: 'thumbs up' },
-        { char: '👎', name: 'thumbs down' },
-        { char: '👌', name: 'OK hand' },
-        { char: '✌️', name: 'victory hand' },
-        { char: '🤞', name: 'crossed fingers' },
-        { char: '🤟', name: 'love-you gesture' },
-        { char: '🤘', name: 'sign of the horns' },
-        { char: '🤙', name: 'call me hand' },
-        { char: '👈', name: 'backhand index pointing left' },
-        { char: '👉', name: 'backhand index pointing right' },
-        { char: '👆', name: 'backhand index pointing up' },
-        { char: '👇', name: 'backhand index pointing down' },
-        { char: '☝️', name: 'index pointing up' },
-        { char: '👋', name: 'waving hand' },
-        { char: '🤚', name: 'raised back of hand' }
-      ]
-    },
-    {
-      name: 'Animals & Nature',
-      emojis: [
-        { char: '🐶', name: 'dog face' },
-        { char: '🐱', name: 'cat face' },
-        { char: '🐭', name: 'mouse face' },
-        { char: '🐹', name: 'hamster face' },
-        { char: '🐰', name: 'rabbit face' },
-        { char: '🦊', name: 'fox face' },
-        { char: '🐻', name: 'bear face' },
-        { char: '🐼', name: 'panda face' },
-        { char: '🐨', name: 'koala face' },
-        { char: '🐯', name: 'tiger face' },
-        { char: '🦁', name: 'lion face' },
-        { char: '🐮', name: 'cow face' },
-        { char: '🌷', name: 'tulip' },
-        { char: '🌹', name: 'rose' },
-        { char: '🌺', name: 'hibiscus' }
-      ]
-    },
-    {
-      name: 'Food & Drink',
-      emojis: [
-        { char: '🍎', name: 'red apple' },
-        { char: '🍐', name: 'pear' },
-        { char: '🍊', name: 'tangerine' },
-        { char: '🍋', name: 'lemon' },
-        { char: '🍌', name: 'banana' },
-        { char: '🍉', name: 'watermelon' },
-        { char: '🍇', name: 'grapes' },
-        { char: '🍓', name: 'strawberry' },
-        { char: '🍈', name: 'melon' },
-        { char: '🍒', name: 'cherries' },
-        { char: '🍑', name: 'peach' },
-        { char: '🥭', name: 'mango' },
-        { char: '🍍', name: 'pineapple' },
-        { char: '🥥', name: 'coconut' },
-        { char: '🥝', name: 'kiwi fruit' }
-      ]
-    },
-    {
-      name: 'Travel & Places',
-      emojis: [
-        { char: '🚗', name: 'automobile' },
-        { char: '🚕', name: 'taxi' },
-        { char: '🚙', name: 'sport utility vehicle' },
-        { char: '🚌', name: 'bus' },
-        { char: '🚎', name: 'trolleybus' },
-        { char: '🏎️', name: 'racing car' },
-        { char: '🚓', name: 'police car' },
-        { char: '🚑', name: 'ambulance' },
-        { char: '🚒', name: 'fire engine' },
-        { char: '✈️', name: 'airplane' },
-        { char: '🚀', name: 'rocket' },
-        { char: '🛸', name: 'flying saucer' },
-        { char: '🚁', name: 'helicopter' },
-        { char: '⛵', name: 'sailboat' },
-        { char: '🚢', name: 'ship' }
-      ]
-    }
-  ];
-
   // Memoize allEmojis to prevent recreation on every render
   const allEmojis = useMemo(() => {
-    return emojiCategories.flatMap(category => category.emojis);
+    return EmojiCategories.flatMap(category => category.emojis);
   }, []);
 
   useEffect(() => {
@@ -330,7 +213,7 @@ export default function Home() {
               )}
 
               {/* Emoji categories - only show when not searching */}
-              {!searchQuery && emojiCategories.map((category) => (
+              {!searchQuery && EmojiCategories.map((category) => (
                 <div key={category.name} className="mb-6">
                   <h2 className="text-lg font-medium text-gray-900 mb-2">{category.name}</h2>
                   {renderEmojiGrid(category.emojis)}
