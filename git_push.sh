@@ -8,16 +8,30 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-echo -e "${YELLOW}Starting the build process...${NC}"
+# Check for --no-build flag
+skip_build=false
+for arg in "$@"; do
+    if [ "$arg" == "--no-build" ]; then
+        skip_build=true
+        break
+    fi
+done
 
-# Run npm build
-npm run build
-
-if [ $? -eq 0 ]; then
-    echo -e "${GREEN}Build completed successfully!${NC}"
+# Build process
+if [ "$skip_build" = true ]; then
+    echo -e "${YELLOW}Skipping build process (--no-build option detected)${NC}"
 else
-    echo "Build failed. Exiting script."
-    exit 1
+    echo -e "${YELLOW}Starting the build process...${NC}"
+    
+    # Run npm build
+    npm run build
+    
+    if [ $? -eq 0 ]; then
+        echo -e "${GREEN}Build completed successfully!${NC}"
+    else
+        echo "Build failed. Exiting script."
+        exit 1
+    fi
 fi
 
 # Ask for commit message
@@ -52,4 +66,4 @@ git commit -m "$commit_message"
 echo -e "${YELLOW}Pushing to branch '$branch_name'...${NC}"
 git push origin $branch_name
 
-echo -e "${GREEN}Done! Successfully built, committed, and pushed to '$branch_name'.${NC}"
+echo -e "${GREEN}Done! Successfully committed and pushed to '$branch_name'.${NC}"
