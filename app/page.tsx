@@ -1,14 +1,14 @@
 "use client";
 
 // pages/index.tsx
-import { useState, useEffect, KeyboardEvent as ReactKeyboardEvent, useMemo } from 'react';
+import { useState, useEffect, KeyboardEvent as ReactKeyboardEvent, useMemo, useCallback } from 'react';
 import Head from 'next/head';
 import { Emoji, EmojiCategories } from "@/app/emojis";
 
 export default function Home() {
   const [recentEmojis, setRecentEmojis] = useState<Emoji[]>([]);
   const [selectedEmojis, setSelectedEmojis] = useState<Emoji[]>([]);
-  const [shiftPressed, setShiftPressed] = useState<boolean>(false);
+  const [controlPressed, setControlPressed] = useState<boolean>(false);
   const [copyMessage, setCopyMessage] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [searchResults, setSearchResults] = useState<Emoji[]>([]);
@@ -18,6 +18,21 @@ export default function Home() {
     return EmojiCategories.flatMap(category => category.emojis);
   }, []);
 
+  const addToRecentEmojis = useCallback((toAdd: Emoji[]) => {
+    let newUpdated = [...recentEmojis];
+
+    for (const emoji of toAdd) {
+      newUpdated = newUpdated.filter(e => e.char !== emoji.char);
+      newUpdated.unshift(emoji);
+    }
+
+    newUpdated = newUpdated.slice(0, 20);
+
+    // Update state and localStorage
+    setRecentEmojis(newUpdated);
+    localStorage.setItem('recentEmojis', JSON.stringify(newUpdated));
+  }, [recentEmojis, setRecentEmojis]);
+
   useEffect(() => {
     // Load recent emojis from localStorage on component mount
     const storedEmojis = localStorage.getItem('recentEmojis');
@@ -25,18 +40,18 @@ export default function Home() {
       setRecentEmojis(JSON.parse(storedEmojis));
     }
 
-    // Set up event listeners for shift key
+    // Set up event listeners for control key
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Shift') {
-        setShiftPressed(true);
+      if (e.key === 'Control') {
+        setControlPressed(true);
       }
     };
 
     const handleKeyUp = (e: KeyboardEvent) => {
-      if (e.key === 'Shift') {
-        setShiftPressed(false);
+      if (e.key === 'Control') {
+        setControlPressed(false);
         if (selectedEmojis.length > 0) {
-          copyToClipboard(selectedEmojis.map(emoji => emoji.char).join(''));
+          addToRecentEmojis(selectedEmojis);
           setSelectedEmojis([]);
         }
       }
@@ -49,7 +64,7 @@ export default function Home() {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
     };
-  }, [selectedEmojis]);
+  }, [selectedEmojis, addToRecentEmojis]);
 
   // Search functionality
   useEffect(() => {
@@ -67,7 +82,8 @@ export default function Home() {
     setSearchResults(results);
   }, [searchQuery, allEmojis]);
 
-  const copyToClipboard = async (text: string) => {
+  const copyToClipboard = async (emojis: Emoji[]) => {
+    const text = emojis.map(emoji => emoji.char).join('');
     try {
       await navigator.clipboard.writeText(text);
       setCopyMessage(`Copied: ${text}`);
@@ -79,27 +95,14 @@ export default function Home() {
   };
 
   const handleEmojiClick = (emoji: Emoji) => {
-    if (shiftPressed) {
-      // If shift is pressed, add to selection
+    if (controlPressed) {
+      // If control is pressed, add to selection
       setSelectedEmojis([...selectedEmojis, emoji]);
     } else {
       // Copy single emoji and update recent
-      copyToClipboard(emoji.char);
-      updateRecentEmojis(emoji);
+      copyToClipboard([emoji]);
+      addToRecentEmojis([emoji]);
     }
-  };
-
-  const updateRecentEmojis = (emoji: Emoji) => {
-    // Create a new array with the clicked emoji at the front
-    const updatedRecent = [
-      emoji,
-      ...recentEmojis.filter(e => e.char !== emoji.char)
-    ].slice(0, 20);
-
-    setRecentEmojis(updatedRecent);
-
-    // Save to localStorage
-    localStorage.setItem('recentEmojis', JSON.stringify(updatedRecent));
   };
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -139,7 +142,7 @@ export default function Home() {
       </Head>
 
       <div className="relative py-3 sm:max-w-xl md:max-w-2xl lg:max-w-4xl mx-auto">
-        <div className="absolute inset-0 bg-gradient-to-r from-cyan-400 to-sky-500 shadow-lg transform -skew-y-6 sm:skew-y-0 sm:-rotate-6 sm:rounded-3xl"></div>
+        <div className="absolute inset-0 bg-gradient-to-r from-cyan-400 to-sky-500 shadow-lg sm:rounded-3xl"></div>
         <div className="relative px-4 py-10 bg-white shadow-lg sm:rounded-3xl sm:p-20">
           <div className="max-w-md mx-auto md:max-w-xl lg:max-w-3xl">
             <div>
@@ -177,16 +180,20 @@ export default function Home() {
               </div>
 
               <div className="mt-6 text-center text-sm text-gray-500">
-                <p>Hold Shift to select multiple emojis • Search by emoji name</p>
+                <p>Hold control to select multiple emojis • Search by emoji name</p>
               </div>
 
               {/* Selected emojis display */}
-              {selectedEmojis.length > 0 && (
-                <div className="mb-6 p-4 border rounded-lg bg-gray-50">
-                  <h2 className="text-sm font-medium text-gray-700 mb-2">Selected Emojis <span className="text-xs text-gray-500">(Release Shift to copy)</span></h2>
-                  <div className="text-2xl">{selectedEmojis.map(emoji => emoji.char).join('')}</div>
+              <div className="mb-6 p-4 border rounded-lg bg-gray-50">
+                <h2 className="text-sm font-medium text-gray-700 mb-2">Selected Emojis <span className="text-xs text-gray-500">(Click to copy one. Hold control while clicking to select more than one)</span></h2>
+                <div className="text-2xl">
+                  {selectedEmojis.length > 0 && (
+                    <>
+                      {selectedEmojis.map(emoji => emoji.char).join('')}
+                    </>
+                  )}
                 </div>
-              )}
+              </div>
 
               {/* Search results */}
               {searchQuery !== "" && (
