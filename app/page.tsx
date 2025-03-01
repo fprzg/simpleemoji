@@ -18,7 +18,19 @@ export default function Home() {
     return EmojiCategories.flatMap(category => category.emojis);
   }, []);
 
-  const addToRecentEmojis = useCallback((toAdd: Emoji[]) => {
+  const copyToClipboard = async (emojis: Emoji[]) => {
+    const text = emojis.map(emoji => emoji.char).join('');
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopyMessage(`Copied: ${text}`);
+      setTimeout(() => setCopyMessage(''), 2000);
+    } catch (err) {
+      setCopyMessage('Failed to copy to clipboard');
+      console.error('Failed to copy: ', err);
+    }
+  };
+
+  const copyAndAddToRecent = useCallback((toAdd: Emoji[]) => {
     let newUpdated = [...recentEmojis];
 
     for (const emoji of toAdd) {
@@ -31,6 +43,7 @@ export default function Home() {
     // Update state and localStorage
     setRecentEmojis(newUpdated);
     localStorage.setItem('recentEmojis', JSON.stringify(newUpdated));
+    copyToClipboard(toAdd);
   }, [recentEmojis, setRecentEmojis]);
 
   useEffect(() => {
@@ -39,7 +52,9 @@ export default function Home() {
     if (storedEmojis) {
       setRecentEmojis(JSON.parse(storedEmojis));
     }
+  }, []);
 
+  useEffect(() => {
     // Set up event listeners for control key
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Control') {
@@ -50,21 +65,37 @@ export default function Home() {
     const handleKeyUp = (e: KeyboardEvent) => {
       if (e.key === 'Control') {
         setControlPressed(false);
+
         if (selectedEmojis.length > 0) {
-          addToRecentEmojis(selectedEmojis);
+          copyAndAddToRecent(selectedEmojis);
           setSelectedEmojis([]);
         }
       }
     };
 
+    const handleBlur = () => {
+      setControlPressed(false);
+    };
+
+    const handleFocus = () => {
+      if (selectedEmojis.length > 0) {
+        copyAndAddToRecent(selectedEmojis);
+        setSelectedEmojis([]);
+      }
+    }
+
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
+    window.addEventListener("blur", handleBlur);
+    window.addEventListener("focus", handleFocus);
 
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
+      window.removeEventListener("blur", handleBlur);
+      window.removeEventListener("focus", handleFocus);
     };
-  }, [selectedEmojis, addToRecentEmojis]);
+  }, [selectedEmojis, copyAndAddToRecent]);
 
   // Search functionality
   useEffect(() => {
@@ -81,29 +112,6 @@ export default function Home() {
 
     setSearchResults(results);
   }, [searchQuery, allEmojis]);
-
-  const copyToClipboard = async (emojis: Emoji[]) => {
-    const text = emojis.map(emoji => emoji.char).join('');
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopyMessage(`Copied: ${text}`);
-      setTimeout(() => setCopyMessage(''), 2000);
-    } catch (err) {
-      setCopyMessage('Failed to copy to clipboard');
-      console.error('Failed to copy: ', err);
-    }
-  };
-
-  const handleEmojiClick = (emoji: Emoji) => {
-    if (controlPressed) {
-      // If control is pressed, add to selection
-      setSelectedEmojis([...selectedEmojis, emoji]);
-    } else {
-      // Copy single emoji and update recent
-      copyToClipboard([emoji]);
-      addToRecentEmojis([emoji]);
-    }
-  };
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
@@ -124,13 +132,21 @@ export default function Home() {
           key={`emoji-${index}-${emoji.char}`}
           className={`text-2xl p-2 border rounded hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 ${selectedEmojis.some(e => e.char === emoji.char) ? 'bg-cyan-100 border-cyan-300' : ''
             }`}
-          onClick={() => handleEmojiClick(emoji)}
+          onClick={() => {
+            if (controlPressed) {
+              // If control is pressed, add to selection
+              setSelectedEmojis([...selectedEmojis, emoji]);
+            } else {
+              copyAndAddToRecent([emoji]);
+            }
+          }}
           title={emoji.name}
         >
           {emoji.char}
         </button>
-      ))}
-    </div>
+      ))
+      }
+    </div >
   );
 
   return (

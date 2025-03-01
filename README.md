@@ -4,4 +4,5 @@ Desktop emoji apps are clumsy and filled with adds, so I made this. Live on [sim
 # TODO
 - [X] For multi-emoji selection, modify the history only after the shift is released.
 - [X] Set the "selected emojis" box floating so it doesn't push the rest of the app downwards (which is annoying).
+- [ ] Check if the control is still pressed. It bugs if you hold it, change window, release and return.
 - [ ] Multilingual support.
