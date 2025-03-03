@@ -2,8 +2,12 @@
 
 // pages/index.tsx
 import { useState, useEffect, KeyboardEvent as ReactKeyboardEvent, useMemo, useCallback } from 'react';
+import { useTranslation } from "react-i18next";
+import "@/i18n";
 import Head from 'next/head';
-import { Emoji, EmojiCategories } from "@/app/emojis";
+import { Emoji } from "@/types/emoji";
+import { emojiRepertoireBuilder } from "@/utils/emoji-utils";
+
 
 export default function Home() {
   const [recentEmojis, setRecentEmojis] = useState<Emoji[]>([]);
@@ -13,10 +17,17 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [searchResults, setSearchResults] = useState<Emoji[]>([]);
 
+  const { t, i18n } = useTranslation();
+
   // Memoize allEmojis to prevent recreation on every render
+  const emojiRepertoire = useMemo(() => {
+    return emojiRepertoireBuilder(i18n.language);
+  }, [i18n.language]);
+
   const allEmojis = useMemo(() => {
-    return EmojiCategories.flatMap(category => category.emojis);
-  }, []);
+    return emojiRepertoire.categories.flatMap((category) => category.emojis);
+
+  }, [emojiRepertoire]);
 
   const copyToClipboard = async (emojis: Emoji[]) => {
     const text = emojis.map(emoji => emoji.char).join('');
@@ -34,7 +45,7 @@ export default function Home() {
     let newUpdated = [...recentEmojis];
 
     for (const emoji of toAdd) {
-      newUpdated = newUpdated.filter(e => e.char !== emoji.char);
+      newUpdated = newUpdated.filter(e => e !== emoji);
       newUpdated.unshift(emoji);
     }
 
@@ -74,7 +85,7 @@ export default function Home() {
     };
 
     const handleBlur = () => {
-      setControlPressed(false);
+      //setControlPressed(false);
     };
 
     const handleFocus = () => {
@@ -105,13 +116,18 @@ export default function Home() {
     }
 
     const query = searchQuery.toLowerCase();
-    const results = allEmojis.filter(emoji =>
-      emoji.name.toLowerCase().includes(query) ||
-      emoji.char.includes(query)
+
+    const results = allEmojis.filter(emoji => {
+      const name = emoji.names["en"]?.toLowerCase();
+      return name?.toLowerCase().includes(query);
+    }
+      //emoji.names.en.toLowerCase().includes(query) ||
+      //emoji.names["en"].toLowerCase().includes(query) ||
+      //emoji.names.en.includes(query)
     );
 
     setSearchResults(results);
-  }, [searchQuery, allEmojis]);
+  }, [searchQuery, emojiRepertoire, allEmojis]);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
@@ -124,13 +140,25 @@ export default function Home() {
     }
   };
 
+  const getEmojiName = (emoji: Emoji): string => {
+    if (emoji.names !== undefined) {
+      for (const lang of emojiRepertoire.langs) {
+        if (lang in emoji.names) {
+          return emoji.names[lang];
+        }
+      }
+    }
+
+    return emoji.char;
+  };
+
   // Render emoji grid
   const renderEmojiGrid = (emojis: Emoji[]) => (
     <div className="grid grid-cols-8 gap-2 md:grid-cols-10 lg:grid-cols-12">
       {emojis.map((emoji, index) => (
         <button
-          key={`emoji-${index}-${emoji.char}`}
-          className={`text-2xl p-2 border rounded hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 ${selectedEmojis.some(e => e.char === emoji.char) ? 'bg-cyan-100 border-cyan-300' : ''
+          key={`emoji-${index}-${emoji}`}
+          className={`text-2xl p-2 border rounded hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 ${selectedEmojis.some(e => e === emoji) ? 'bg-cyan-100 border-cyan-300' : ''
             }`}
           onClick={() => {
             if (controlPressed) {
@@ -140,7 +168,7 @@ export default function Home() {
               copyAndAddToRecent([emoji]);
             }
           }}
-          title={emoji.name}
+          title={getEmojiName(emoji)}
         >
           {emoji.char}
         </button>
@@ -152,17 +180,25 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gray-100 py-6 flex flex-col justify-center sm:py-12">
       <Head>
-        <title>Simple Emoji</title>
-        <meta name="description" content="Copy emojis with a click" />
+        <title>{t("ui.title")}</title>
+        <meta name="description" content="{t('ui.description')}" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
       <div className="relative py-3 sm:max-w-xl md:max-w-2xl lg:max-w-4xl mx-auto">
+        {/*
         <div className="absolute inset-0 bg-gradient-to-r from-cyan-400 to-sky-500 shadow-lg sm:rounded-3xl"></div>
+        */}
         <div className="relative px-4 py-10 bg-white shadow-lg sm:rounded-3xl sm:p-20">
           <div className="max-w-md mx-auto md:max-w-xl lg:max-w-3xl">
             <div>
-              <h1 className="text-3xl font-extrabold text-gray-900 text-center mb-8">Simple Emoji</h1>
+              <h1 className="text-3xl font-extrabold text-gray-900 text-center mb-8">{t("ui.title")}</h1>
+
+              <div className="text-right mb-4">
+                <button onClick={() => i18n.changeLanguage("en")} className='mr-2'>us English</button>
+                <br />
+                <button onClick={() => i18n.changeLanguage("es")} className='mr-2'>es Español</button>
+              </div>
 
               {/* Copy message */}
               {copyMessage && (
@@ -177,7 +213,7 @@ export default function Home() {
                   <input
                     type="text"
                     className="focus:ring-cyan-500 focus:border-cyan-500 block w-full pl-4 pr-10 py-3 sm:text-sm border-gray-300 rounded-md"
-                    placeholder="Search emojis..."
+                    placeholder={t("ui.searchPlaceholder")}
                     value={searchQuery}
                     onChange={handleSearchChange}
                     onKeyDown={handleKeyDown}
@@ -196,12 +232,12 @@ export default function Home() {
               </div>
 
               <div className="mt-6 text-center text-sm text-gray-500">
-                <p>Hold control to select multiple emojis • Search by emoji name</p>
+                <p>{t("ui.holdControl")}</p>
               </div>
 
               {/* Selected emojis display */}
               <div className="mb-6 p-4 border rounded-lg bg-gray-50">
-                <h2 className="text-sm font-medium text-gray-700 mb-2">Selected Emojis <span className="text-xs text-gray-500">(Click to copy one. Hold control while clicking to select more than one)</span></h2>
+                <h2 className="text-sm font-medium text-gray-700 mb-2">{t("ui.selectedEmojis")}<span className="text-xs text-gray-500">{t("selectedEmojisInstructions")}</span></h2>
                 <div className="text-2xl">
                   {selectedEmojis.length > 0 && (
                     <>
@@ -216,12 +252,12 @@ export default function Home() {
                 <div className="mb-6">
                   {searchResults.length > 0 ? (
                     <>
-                      < h2 className="text-lg font-medium text-gray-900 mb-2">Search Results</h2>
+                      < h2 className="text-lg font-medium text-gray-900 mb-2">{t("ui.searchResults")}</h2>
                       {renderEmojiGrid(searchResults)}
                     </>
                   ) : (
                     <>
-                      <div className="text-lg text-gray-700">No match</div>
+                      <div className="text-lg text-gray-700">{t("ui.noMatch")}</div>
                     </>
                   )}
                 </div>
@@ -230,15 +266,17 @@ export default function Home() {
               {/* Recent emojis */}
               {recentEmojis.length > 0 && !searchQuery && (
                 <div className="mb-6">
-                  <h2 className="text-lg font-medium text-gray-900 mb-2">Recent</h2>
+                  <h2 className="text-lg font-medium text-gray-900 mb-2">{t("ui.recent")}</h2>
                   {renderEmojiGrid(recentEmojis)}
                 </div>
               )}
 
               {/* Emoji categories - only show when not searching */}
-              {!searchQuery && EmojiCategories.map((category) => (
+              {!searchQuery && emojiRepertoire.categories.map((category) => (
                 <div key={category.name} className="mb-6">
-                  <h2 className="text-lg font-medium text-gray-900 mb-2">{category.name}</h2>
+                  <h2 className="text-lg font-medium text-gray-900 mb-2">
+                    {t(`categories.${category.name}`)}
+                  </h2>
                   {renderEmojiGrid(category.emojis)}
                 </div>
               ))}
