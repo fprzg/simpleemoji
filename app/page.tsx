@@ -164,24 +164,30 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gray-100 py-6 flex flex-col justify-center sm:py-12">
       <Head>
-        <title>{t("ui.title")}</title>
+        <title>Simple Emoji</title>
         <meta name="description" content="{t('ui.description')}" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
       <div className="relative py-3 sm:max-w-xl md:max-w-2xl lg:max-w-4xl mx-auto">
-        {/*
-        <div className="absolute inset-0 bg-gradient-to-r from-cyan-400 to-sky-500 shadow-lg sm:rounded-3xl"></div>
-        */}
         <div className="relative px-4 py-10 bg-white shadow-lg sm:rounded-3xl sm:p-20">
           <div className="max-w-md mx-auto md:max-w-xl lg:max-w-3xl">
             <div>
-              <h1 className="text-3xl font-extrabold text-gray-900 text-center mb-8">{t("ui.title")}</h1>
+              <div className='relative group'>
+                <h1 className="text-3xl font-extrabold text-gray-900 text-center mb-8">:: Simple Emoji ::</h1>
+                <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 hidden group-hover:block bg-gray-800 text-white text-sm px-3 py-1 rounded-md">
+                  {t("ui.title")}
+                </div>
+              </div>
 
               <div className="text-right mb-4">
                 <button onClick={() => i18n.changeLanguage("en")} className='mr-2'>us English</button>
                 <br />
                 <button onClick={() => i18n.changeLanguage("es")} className='mr-2'>es Español</button>
+                <br />
+                <button onClick={() => i18n.changeLanguage("fr")} className='mr-2'>fr French</button>
+                <br />
+                <button onClick={() => i18n.changeLanguage("de")} className='mr-2'>de Deutsche</button>
               </div>
 
               {/* Copy message */}
