@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next";
 import "@/i18n";
 import Head from 'next/head';
 import { Emoji } from "@/types/emoji";
-import { emojiRepertoireBuilder } from "@/utils/emoji-utils";
+import { emojiRepertoireBuilder, emojiSearch } from "@/utils/emoji-utils";
 
 
 export default function Home() {
@@ -19,7 +19,6 @@ export default function Home() {
 
   const { t, i18n } = useTranslation();
 
-  // Memoize allEmojis to prevent recreation on every render
   const emojiRepertoire = useMemo(() => {
     return emojiRepertoireBuilder(i18n.language);
   }, [i18n.language]);
@@ -110,24 +109,9 @@ export default function Home() {
 
   // Search functionality
   useEffect(() => {
-    if (searchQuery.trim() === '') {
-      setSearchResults([]);
-      return;
-    }
-
-    const query = searchQuery.toLowerCase();
-
-    const results = allEmojis.filter(emoji => {
-      const name = emoji.names["en"]?.toLowerCase();
-      return name?.toLowerCase().includes(query);
-    }
-      //emoji.names.en.toLowerCase().includes(query) ||
-      //emoji.names["en"].toLowerCase().includes(query) ||
-      //emoji.names.en.includes(query)
-    );
-
+    const results = emojiSearch(searchQuery, allEmojis, emojiRepertoire.langs);
     setSearchResults(results);
-  }, [searchQuery, emojiRepertoire, allEmojis]);
+  }, [searchQuery, emojiRepertoire.langs, allEmojis]);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
@@ -237,7 +221,7 @@ export default function Home() {
 
               {/* Selected emojis display */}
               <div className="mb-6 p-4 border rounded-lg bg-gray-50">
-                <h2 className="text-sm font-medium text-gray-700 mb-2">{t("ui.selectedEmojis")}<span className="text-xs text-gray-500">{t("selectedEmojisInstructions")}</span></h2>
+                <h2 className="text-sm font-medium text-gray-700 mb-2">{t("ui.selectedEmojis")}<span className="text-xs text-gray-500">{t("ui.selectedEmojisInstructions")}</span></h2>
                 <div className="text-2xl">
                   {selectedEmojis.length > 0 && (
                     <>
