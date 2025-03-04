@@ -1,12 +1,11 @@
 "use client";
 
-// pages/index.tsx
 import { useState, useEffect, KeyboardEvent as ReactKeyboardEvent, useMemo, useCallback } from 'react';
 import { useTranslation } from "react-i18next";
 import "@/i18n";
 import Head from 'next/head';
 import { Emoji } from "@/types/emoji";
-import { emojiRepertoireBuilder, emojiSearch } from "@/utils/emoji-utils";
+import { loadEmojis, saveEmojis, emojiRepertoireBuilder, emojiSearch, getTranslations } from "@/utils/emoji-utils";
 
 
 export default function Home() {
@@ -27,6 +26,7 @@ export default function Home() {
     return emojiRepertoire.categories.flatMap((category) => category.emojis);
 
   }, [emojiRepertoire]);
+
 
   const copyToClipboard = async (emojis: Emoji[]) => {
     const text = emojis.map(emoji => emoji.char).join('');
@@ -50,22 +50,28 @@ export default function Home() {
 
     newUpdated = newUpdated.slice(0, 20);
 
-    // Update state and localStorage
     setRecentEmojis(newUpdated);
-    localStorage.setItem('recentEmojis', JSON.stringify(newUpdated));
+    saveEmojis(newUpdated);
+
     copyToClipboard(toAdd);
-  }, [recentEmojis, setRecentEmojis]);
+  }, [recentEmojis]);
 
+  //
+  // Load and deserialize recent emojis from localStorage on component mount
+  //
   useEffect(() => {
-    // Load recent emojis from localStorage on component mount
-    const storedEmojis = localStorage.getItem('recentEmojis');
-    if (storedEmojis) {
-      setRecentEmojis(JSON.parse(storedEmojis));
-    }
-  }, []);
+    const translations = getTranslations([i18n.language, "en"]);
+    setRecentEmojis(loadEmojis(translations));
+  }, [i18n.language]);
 
+  const changeLanguage = (lang: string) => {
+    i18n.changeLanguage(lang);
+  };
+
+  //
+  // Event listeners
+  //
   useEffect(() => {
-    // Set up event listeners for control key
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Control') {
         setControlPressed(true);
@@ -107,7 +113,9 @@ export default function Home() {
     };
   }, [selectedEmojis, copyAndAddToRecent]);
 
+  //
   // Search functionality
+  //
   useEffect(() => {
     const results = emojiSearch(searchQuery, allEmojis, emojiRepertoire.langs);
     setSearchResults(results);
@@ -181,13 +189,13 @@ export default function Home() {
               </div>
 
               <div className="text-right mb-4">
-                <button onClick={() => i18n.changeLanguage("en")} className='mr-2'>us English</button>
+                <button onClick={() => changeLanguage("en")} className='mr-2'>us English</button>
                 <br />
-                <button onClick={() => i18n.changeLanguage("es")} className='mr-2'>es Español</button>
+                <button onClick={() => changeLanguage("es")} className='mr-2'>es Español</button>
                 <br />
-                <button onClick={() => i18n.changeLanguage("fr")} className='mr-2'>fr French</button>
+                <button onClick={() => changeLanguage("fr")} className='mr-2'>fr French</button>
                 <br />
-                <button onClick={() => i18n.changeLanguage("de")} className='mr-2'>de Deutsche</button>
+                <button onClick={() => changeLanguage("de")} className='mr-2'>de Deutsche</button>
               </div>
 
               {/* Copy message */}
